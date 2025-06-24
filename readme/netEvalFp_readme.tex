@@ -269,7 +269,7 @@ Each of these parameters can be adjusted before calling \code{train}. For exampl
 \code{net.trainParam.min\_grad = 1e{-6};}
 \]
 
-Warning: the code will stop training after hitting the max number of epochs and will not warn you that it stopped because it hit the max, and not because it converged. To change the max number of epochs change \code{net.trainParam.epochs}, and in the code I implemented ex-post calculation of the function fit (mean absolute error and $R^2$) to see how well the function converged
+Warning: the code will stop training after hitting the max number of epochs and will not loudly warn you that it stopped because it hit the max, and not because it converged. You can look at the training window output or inspect \code{tr.stop} to see why the training stopped. In the testing code I implemented this check and an ex-post calculation of the function fit (mean absolute error and $R^2$) to see how well the function converged
 
 
 
