@@ -1,0 +1,466 @@
+% !TEX TS-program = pdflatexmk
+
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[onehalfspacing]{setspace}
+\usepackage[english]{babel}
+\usepackage{amsmath, amsthm}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{caption}
+\usepackage{subcaption}
+%\usepackage{theorem}
+%\usepackage{subfig}
+\usepackage{epsfig}
+\usepackage{rotating}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage[usenames, dvipsnames]{xcolor}
+\usepackage{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{chngcntr}
+\usepackage{listings}
+
+
+
+%\usepackage{times}
+\usepackage{mathpazo}
+
+\usepackage{color, soul}
+\usepackage{booktabs}
+%\usepackage[capposition=top]{floatrow}
+\usepackage{xpatch}
+\usepackage{verbatim}
+%\usepackage{natbib}
+\usepackage{epstopdf}
+\usepackage{ragged2e}
+
+
+\graphicspath{{./Figures}}
+
+\setcounter{MaxMatrixCols}{10}
+
+\usepackage{accents}
+\newcommand{\ubar}[1]{\underline{#1}}
+
+\newcommand{\E}{E}
+%\newcommand{\E}{\mathbb{E}}
+%\newcommand{\E}{\mathrm{E}}
+%\DeclareMathOperator{\E}{\mathrm{E}}
+\newcommand{\pc}[1]{\dot{#1}}
+\newcommand{\er}[1]{(\ref{eq:#1})}
+\newcommand{\fr}[1]{Figure~\ref{fig:#1}}
+\newcommand{\sr}[1]{Section~\ref{sec:#1}}
+\newcommand{\ar}[1]{Appendix~\ref{app:#1}}
+\newcommand{\tr}[1]{Table~\ref{tab:#1}}
+
+\newtheorem{assum}{Assumption}
+\newtheorem{prop}{Proposition}
+\newtheorem{lem}{Lemma}
+\newcommand{\propref}[1]{{\bf Proposition \ref{#1}}}
+\newcommand{\assumref}[1]{{Assumption \ref{assum:#1}}}
+\newtheorem{mydef}{Definition}
+\newtheorem{claim}{Claim}
+
+%code font
+\newcommand{\code}[1]{\texttt{#1}}
+
+\newcommand{\hly}[1]{{\sethlcolor{yellow}\hl{#1}}}
+\newcommand{\hlc}[1]{{\sethlcolor{cyan}\hl{#1}}}
+\newcommand{\hlp}[1]{{\sethlcolor{pink}\hl{#1}}}
+
+%SPACING BETWEEN LINES
+\usepackage{setspace}
+\setstretch{1}
+
+%SPACING BEFORE AND AFTER EQUATIONS
+\makeatletter
+\g@addto@macro\normalsize{%
+  \setlength\abovedisplayskip{6pt}
+  \setlength\belowdisplayskip{6pt}
+  \setlength\abovedisplayshortskip{6pt}
+  \setlength\belowdisplayshortskip{6pt}
+}
+\makeatother
+
+
+%one inch + sum of all of these gets you to the top of text (Letter = 11in by 8.5in)
+\setlength{\voffset}{-.3in}  %one inch + voffset + topmargin = top of header
+\setlength{\topmargin}{.1in}
+\setlength{\headheight}{.1in} %height of header
+\setlength{\headsep}{.1in} %space from header to top of text
+%height of text
+\setlength{\textheight}{9.5in}
+
+%one inch + hoffset + oddsidemargin gets you to the start of the left of the text 
+\setlength{\hoffset}{-0.25in}
+\setlength{\oddsidemargin}{0in}
+%width of text
+\setlength{\textwidth}{6.75in}
+
+%CHANGE ABSTRACT WIDTH
+\let\oldabstract\abstract
+\let\oldendabstract\endabstract
+\makeatletter
+\renewenvironment{abstract}
+{\renewenvironment{quotation}%
+               {\list{}{\addtolength{\leftmargin}{-2em} % change this value to add or remove length to the the default
+                        \listparindent 1.5em%
+                        \itemindent    \listparindent%
+                        \rightmargin   \leftmargin%
+                        \parsep        \z@ \@plus\p@}%
+                \item\relax}%
+               {\endlist}%
+\oldabstract}
+{\oldendabstract}
+\makeatother
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% REF AND HYPERLINK COLOURS
+
+\usepackage{hyperref}        
+\hypersetup{
+    bookmarks=true,         % show bookmarks bar?
+    unicode=false,          % non-Latin characters in Acrobat?s bookmarks
+    pdftoolbar=true,        % show Acrobat?s toolbar?
+    pdfmenubar=true,        % show Acrobat?s menu?
+    pdffitwindow=false,     % window fit to page when opened
+    pdfstartview={FitH},    % fits the width of the page to the window
+    pdftitle={netEvalFp},    % title
+    pdfauthor={AC},     % author
+%    pdfsubject={Subject},   % subject of the document
+%    pdfcreator={Creator},   % creator of the document
+%    pdfproducer={Producer}, % producer of the document
+%    pdfkeywords={keyword1} {key2} {key3}, % list of keywords
+    pdfnewwindow=true,      % links in new window
+    colorlinks=true,     % color of internal links (change box color with linkbordercolor)
+    citecolor=blue,        % color of links to bibliography
+    filecolor=blue,      % color of file links
+    urlcolor=blue,           % color of external links
+    linkcolor=blue
+    }
+
+
+\begin{document}
+
+\title{\code{netEvalFp}: Approximating $y=f(x)$ using a Neural Net and calculating its Jacobian}
+
+\author{Alex Clymo}
+
+\date{}
+
+\maketitle
+
+This note and repository stores some of what I am learning about implementing a neural net (NN) for function approximation in Matlab. It is mostly for my own consumption, to remind myself of these things once I forget them again, as there is a fair bit of technical stuff under the hood. The note presumes some basic knowledge of how neural nets work (but not much) and is more focused on explaining how they are implemented in Matlab, and how to use them for function approximation. 
+
+The repository also contains some functions I wrote for working with NN approximations. In particular, \code{dy\_dx = netEvalFp(x,netParams)} returns the matrix of first derivatives (i.e. the Jacobian) of the approximated function at a point \code{x}, which is something you might need when, for example, evaluating the drift terms in an HJB. See \sr{code} for more details of the code in this repository. 
+
+
+These notes build very heavily on the work of Alessandro Villa and Vytautas Valaitis, whose paper \emph{A Machine Learning Projection Method for Macro-finance Models} (QE, 2024) is a fantastic reference for explaining the basics of neural nets and machine learning to a macroeconomist. My codes and knowledge build on the codes they made available at their Github repository \href{https://github.com/forket86/ANNEA/}{here}. 
+
+
+\section{Our goal}
+
+The goal is to approximate a function $y=f(x)$ using a neural net. We will focus only on shallow neural nets with $H$ nodes in the hidden layer. For our purposes, and to be consistent with how Matlab likes to handle the data for this kind of problem, we are looking at functions where the input $x$ is a $R \times 1$ column vector and the output $y$ is a $U \times 1$ column vector.\footnote{Functions where the inputs and outputs are matrices or tensors can obviously be trivially handled by flattening them first.} The NN simply approximates $f(x)$ using a certain functional form and parameters, to produce an approximation $f(x) \simeq NN(x,\hat \phi)$ and predicted values $\hat y = NN(x,\hat \phi)$, where $NN(x,\hat \phi)$ is the approximating function evaluated at estimated parameter vector $\hat \phi$. See \ar{maths} for the explicit functional form used by the default Matlab neural net. 
+
+The parameters are trained to minimise an error function, typically the mean squared error. Stated like this, we see the problem is not so different from estimation or approximation ideas we are used to. One difference from, e.g., approximating a function using OLS is that the output $y$ can be a vector, not just a scalar. To estimate the model (aka ``train'' the neural network) we simply give the code our $x$ and $y$ data and ask it to minimise the error, just like OLS would do. Suppose we have data with observations indexed by $i = 1,...,Q$, where each datapoint is an observation of our input and output vectors $x_i$ and $y_i$. For Matlab, we give the data to the training routine as matrices $X$ and $Y$ of size $R \times Q$ and $U \times Q$ respectively. This is called ``supervised learning'' because we are giving the model the $Y$ data on which to train. 
+
+For many economic problems we would also like to know the first derivatives of our function after we approximate it. For our true function $y=f(x)$ this is the Jacobian matrix 
+\[
+J_f(x) = \frac{\partial f(x)}{\partial x^\top} =
+\begin{bmatrix}
+\frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_R} \\
+\vdots & \ddots & \vdots \\
+\frac{\partial f_U}{\partial x_1} & \cdots & \frac{\partial f_U}{\partial x_R}
+\end{bmatrix}
+\]
+Once we have the estimated net, we can compute the approximation of the Jacobian as
+\[
+J_{NN}(x) = \frac{\partial {NN}(x,\hat\phi)}{\partial x^\top} =
+\begin{bmatrix}
+\frac{\partial\, NN_1(x, \hat{\phi})}{\partial x_1} & \cdots & \frac{\partial\, NN_1(x, \hat{\phi})}{\partial x_R} \\
+\vdots & \ddots & \vdots \\
+\frac{\partial\, NN_U(x, \hat{\phi})}{\partial x_1} & \cdots & \frac{\partial\, NN_U(x, \hat{\phi})}{\partial x_R}
+\end{bmatrix}
+\]
+We will code this up manually, as I do not believe Matlab provides a function to do it. See \sr{code} for details of the code and \ar{maths} for the derivation of the Jacobian. 
+
+\section{Creating a neural network in Matlab}
+
+\begin{itemize}
+\item \code{feedforwardnet} sets up a generic shallow (i.e. one hidden layer) neural net. There are functions like \code{fitnet} which set up versions with specific purposes, which just tweak some of the settings. These two are similar enough you can choose either. To set up a net with \code{H} neurons in the hidden layer use
+
+\code{net = feedforwardnet(H)}
+
+The number of neurons is a choice which is up to you, like choosing what order of polynomial to use to approximate a function. Adding up all the weights and biases, the number of parameters the NN has is $H \times (R + U +1) + U$, which can obviously very many parameters if the dimension of the input or number of nodes is high. The higher $H$ the richer the approximation, but the more the model will try to overfit. This is where validation comes in, which is one difference from standard approximation techniques. 
+
+\item Once created and trained, the net acts like a function you can call. E.g. if you train the net to approximate a function $y=f(x)$, this is supervised learning where the net will now store an approximation of the function, and return to you predicted values. Calling
+
+\code{yhat = net(x)}
+
+returns the predicted values \code{yhat} given an input \code{x}. At the same time, the \code{net} object acts like a structure, and you can inspect and edit using the structure notation \code{net.xyz} for any field \code{xyz}. 
+
+\item The default settings for the NN in Matlab are:
+\begin{itemize}
+\item Hidden layer has a \code{tansig} activation function, and output layer a \code{purelin} activation function
+\item Inputs and outputs are scaled using \code{mapminmax}, which means they are scaled relative to their max and min values during processing. 
+\end{itemize}
+\end{itemize}
+
+
+
+\section{Training the network}
+
+Once the neural network architecture has been defined and the input-output data prepared, training the network in MATLAB is performed using the \code{train} function. This adjusts the weights and biases to minimize the error between predicted and target outputs.
+
+\subsection{Basic Training Call}
+
+The network is trained via:
+
+[\code{net}, \code{tr}] = \code{train}(\code{net}, \code{x}, \code{y});
+
+Here:
+\begin{itemize}
+  \item \code{net} is the network object (e.g., created via \code{feedforwardnet(H)}).
+  \item \code{x} is the input matrix of size \( R \times S \), where \( S \) is the number of training examples.
+  \item \code{y} is the matrix of target outputs of size \( U \times S \).
+  \item The returned \code{net} contains the trained parameters.
+  \item The returned structure \code{tr} contains training diagnostics, including the indices used for training, validation, and testing, as well as training performance over iterations.
+\end{itemize}
+
+Each time the \code{train} function is called, the code starts at the currently stored parameters in \code{net} and updates them to get closer to the new data. This means that past training is always stored and built upon as long as you call and save to the same \code{net} object: we do not start again from scratch each time you call train. 
+
+\subsection{Training, Validation, and Test Sets}
+
+MATLAB automatically divides the data into three sets:
+\begin{itemize}
+  \item \textbf{Training set} – used to fit the weights and biases.
+  \item \textbf{Validation set} – used to monitor generalization error during training. Training stops early if validation error worsens.
+  \item \textbf{Test set} – used only for final performance evaluation and not accessed during training.
+\end{itemize}
+
+By default, this split is random via \code{'dividerand'}, which may yield different results across runs even with the same initial weights.
+
+%\subsection*{Using \code{divideint} to Ensure Reproducibility}
+
+In economic modeling applications, such as equilibrium solvers or value function iteration, it is useful to eliminate randomness across training runs. For this purpose, MATLAB offers deterministic division via the \code{'divideint'} function, which divides data using interleaved indexing:
+
+\code{net.divideFcn = 'divideint';}
+
+This ensures the same data split is used on each run, promoting consistent behavior and easier convergence diagnostics. You can edit the fraction of observations allocation to each use by editing the parameters \code{net.divideParam.trainRatio}, \code{net.divideParam.valRatio}, and \code{net.divideParam.testRatio}. 
+
+
+\subsection{Convergence Criteria in \code{train}}
+
+The \code{train()} function stops training when one of several criteria is met. For the default algorithm (\code{trainlm}), the key convergence conditions are:
+
+\begin{itemize}
+  \item \textbf{Maximum number of epochs:} Training stops after a fixed number of iterations. Controlled by \code{net.trainParam.epochs} (default: 1000).
+  \item \textbf{Minimum performance gradient:} Training stops if the gradient of the performance function falls below \code{net.trainParam.min\_grad} (default: \(10^{-7}\)).
+  \item \textbf{Validation stop:} If the validation performance fails to improve for \code{net.trainParam.max\_fail} consecutive checks (default: 6), training stops early.
+  \item \textbf{Performance goal:} Training stops if the mean squared error drops below \code{net.trainParam.goal} (default: 0).
+  \item \textbf{Maximum training time:} Training stops if it exceeds \code{net.trainParam.time} seconds (default: \(\infty\)).
+\end{itemize}
+
+Each of these parameters can be adjusted before calling \code{train}. For example:
+\[
+\code{net.trainParam.epochs = 500;} \quad
+\code{net.trainParam.min\_grad = 1e{-6};}
+\]
+
+Warning: the code will stop training after hitting the max number of epochs and will not warn you that it stopped because it hit the max, and not because it converged. To change the max number of epochs change \code{net.trainParam.epochs}, and in the code I implemented ex-post calculation of the function fit (mean absolute error and $R^2$) to see how well the function converged
+
+
+
+\subsection{Additional notes on training}
+
+\begin{itemize}
+\item Remember that the NN will try to fit the data the best it can. But if you do not allow enough neurons it will give a bad fit to the data. Check the fit after running training and consider increasing the number of nodes if the fit is bad. To avoid overfitting, the best practice would be (I think) to compute the fit only on the testing sample (which was not used in the training) when comparing hyper-parameters such as the number of nodes. 
+
+  \item The indices used for each subset are stored in \code{tr.trainInd}, \code{tr.valInd}, and \code{tr.testInd}.
+  \item To manually specify the split, use \code{'divideind'} and set the index fields in \code{net.divideParam}.
+  \item For full reproducibility across sessions, set the seed using \code{rng(seed)} at the top of your script.
+
+
+
+\item In many economic applications you might want to dampen the update of the approximation of a function. For example, we might re-train the net on a new simulation, and then use the net to produce a new simulation, and so on (think a Krusell Smith type application). To ensure stability, we might to not fully update the net each iteration. 
+
+You can implement dampening of NN update in several ways. Note that calling \code{train} will by default try to exactly fit the data presented to it. To dampen, we need to essentially slow down or stop the \code{train} function before it does so. Here are some options:
+\begin{enumerate}
+\item Simplest: Dampen the data being sent to train, then let train run as usual. E.g. don't send the new value functions, but a dampened update of them. 
+
+\item Reduce number of epochs (\code{net.trainParam.epochs}). Epochs is number of iterations inside the train function, so fewer iterations might stop \code{train} from fully converging. However, it is typically very quick to converge quite close to the solution. Alternatively, just setting a low number of max epochs is also helpful for speeding up your code, as it might not be necessary to get full convergence during intermediate iterations. 
+
+\item If using the default Levenberg–Marquardt algorithm for updating (\code{net.trainFcn = 'trainlm'}) increase initial dampening and slow how fast dampening is updated:
+
+\code{net.trainParam.mu = 1e-1}  --  Higher mu = more damping (default is 0.001)
+
+\code{net.trainParam.mu\_dec = 0.1} -- Decrease mu slowly
+
+\code{net.trainParam.mu\_inc = 10} -- Increase mu quickly on poor steps
+
+\item Switch to \code{net.trainFcn = 'traingd'} which has a fixed learning rate, and set a low learning rate \code{net.trainParam.lr = 0.001} and low number of max epochs. Apparently \code{traingda} is similar but with an adaptive learning rate. 
+
+\item Manually blend the old and new NN parameters with dampening. We extract these parameters manually using the function \code{netExtractParams} we wrote, so could blend the old and new weights, biases, and scaling parameters. 
+
+\end{enumerate}
+
+\end{itemize}
+
+
+\clearpage
+\section{Code details}
+\label{sec:code}
+
+This repository includes five MATLAB files: three functions and two example scripts. These provide tools for evaluating a trained feedforward neural network and demonstrating its use.
+
+\begin{itemize}
+  \item \code{main\_test1.m} and \code{main\_test2.m}:  
+  Demonstration scripts showing how to:
+  \begin{itemize}
+    \item Create and train a neural network using \code{feedforwardnet}.
+    \item Extract network parameters using \code{netExtractParams}.
+    \item Evaluate the output and Jacobian using the custom functions \code{netEvalF} and \code{netEvalFp}.
+  \end{itemize}
+  These scripts serve as test beds for verifying the functionality of the custom code. The first script tests a function where $y$ is a scalar output, and the second a function where $y$ is a $3\times1$ vector output.
+
+  \item \code{netExtractParams.m}:  
+  Extracts network parameters into a structured format for external use.
+
+  \textbf{Inputs:} \code{net} — a trained feedforward neural network object.
+
+  \textbf{Outputs:} \code{netParams} — a structure containing:
+  \begin{itemize}
+    \item weights and biases for each layer,
+    \item input and output scaling parameters for mapminmax transformations.
+    \item Some basic details about the net structure
+  \end{itemize}
+
+  \item \code{netEvalF.m}:  
+  Evaluates the output of the trained neural network at a batch of input points.
+
+  \textbf{Inputs:}
+  \begin{itemize}
+    \item \code{x} — matrix of input vectors, of size \( R \times S \)
+    \item \code{netParams} — structure of network parameters from \code{netExtractParams}
+  \end{itemize}
+
+  \textbf{Outputs:} \code{y} — matrix of predicted outputs, of size \( U \times S \)
+
+  \item \code{netEvalFp.m}:  
+  Evaluates the Jacobian of the network output with respect to the input, for a batch of input vectors.
+
+  \textbf{Inputs:}
+  \begin{itemize}
+    \item \code{x} — matrix of input vectors, of size \( R \times S \)
+    \item \code{netParams} — structure of network parameters
+  \end{itemize}
+
+  \textbf{Outputs:} \code{J} — a 3D array of size \( U \times R \times S \), where \code{J(:,:,s)} is the Jacobian at the \( s \)-th input point
+\end{itemize}
+
+
+
+
+
+
+\clearpage
+\appendix
+
+{\centering \noindent {\bf \LARGE Appendix} \par}
+
+\setcounter{page}{1}
+\setcounter{equation}{0} 
+\counterwithin{figure}{section}
+
+\section{Mathematical forms and derivations}
+\label{app:maths}
+
+\subsection{Neural net functional form}
+
+Let \( S_{\text{in}}(x) \) denote the elementwise affine transformation that rescales each component of the input vector \( x \in \mathbb{R}^R \) from its original range to a target range, and let \( S_{\text{out}}^{-1}(z) \) denote the inverse mapping applied to the output. Specifically:
+\begin{align*}
+S_{\text{in}}(x)_i &= (y_{\max,i}^{\text{in}} - y_{\min,i}^{\text{in}}) \cdot \frac{x_i - x_{\min,i}^{\text{in}}}{x_{\max,i}^{\text{in}} - x_{\min,i}^{\text{in}}} + y_{\min,i}^{\text{in}} \\
+S_{\text{out}}^{-1}(z)_i &= \left( \frac{z_i - y_{\min,i}^{\text{out}}}{y_{\max,i}^{\text{out}} - y_{\min,i}^{\text{out}}} \right) \cdot (x_{\max,i}^{\text{out}} - x_{\min,i}^{\text{out}}) + x_{\min,i}^{\text{out}}
+\end{align*}
+Then the function form for a shallow neural network with $H$ nodes in the hidden layer is:
+\[
+\hat{y} = S_{\text{out}}^{-1} \left( W^{(2)} \cdot \tanh\left( W^{(1)} \cdot S_{\text{in}}(x) + b^{(1)} \right) + b^{(2)} \right)
+\]
+where:
+\begin{itemize}
+  \item \( x \in \mathbb{R}^R \) is the raw input,
+  \item \( \hat{y} \in \mathbb{R}^U \) is the predicted output in the original (unscaled) space,
+  \item \( W^{(1)} \in \mathbb{R}^{H \times R} \), \( b^{(1)} \in \mathbb{R}^H \), \( W^{(2)} \in \mathbb{R}^{U \times H} \), \( b^{(2)} \in \mathbb{R}^U \),
+  \item \( \tanh(\cdot) \) is applied elementwise.
+\end{itemize}
+
+
+\subsection{Derivation of the Jacobian of the network output with respect to the input}
+
+We seek the Jacobian \( J = \frac{\partial \hat{y}}{\partial x} \in \mathbb{R}^{U \times R} \). Define intermediate quantities:
+\begin{align*}
+z &= S_{\text{in}}(x) \in \mathbb{R}^R \\
+a &= W^{(1)} z + b^{(1)} \in \mathbb{R}^H \\
+h &= \tanh(a) \in \mathbb{R}^H \\
+y^{\text{norm}} &= W^{(2)} h + b^{(2)} \in \mathbb{R}^U \\
+\hat{y} &= S_{\text{out}}^{-1}(y^{\text{norm}}) \in \mathbb{R}^U
+\end{align*}
+Applying the chain rule:
+
+\[
+J = \frac{\partial \hat{y}}{\partial x} 
+= \frac{\partial \hat{y}}{\partial y^{\text{norm}}}
+  \cdot \frac{\partial y^{\text{norm}}}{\partial h}
+  \cdot \frac{\partial h}{\partial a}
+  \cdot \frac{\partial a}{\partial z}
+  \cdot \frac{\partial z}{\partial x}
+\]
+
+We compute each term:
+
+\begin{itemize}
+  \item \( \displaystyle \frac{\partial \hat{y}}{\partial y^{\text{norm}}} \in \mathbb{R}^{U \times U} \) is diagonal with entries:
+    \[
+    \left( \frac{\partial \hat{y}}{\partial y^{\text{norm}}} \right)_{ii} = 
+    \frac{x^{\max}_{i,\text{out}} - x^{\min}_{i,\text{out}}}{y^{\max}_{i,\text{out}} - y^{\min}_{i,\text{out}}}
+    \]
+
+  \item \( \displaystyle \frac{\partial y^{\text{norm}}}{\partial h} = W^{(2)} \in \mathbb{R}^{U \times H} \)
+
+  \item \( \displaystyle \frac{\partial h}{\partial a} \in \mathbb{R}^{H \times H} \) is diagonal with entries:
+    \[
+    \left( \frac{\partial h}{\partial a} \right)_{ii} = 1 - \tanh^2(a_i)
+    \]
+
+  \item \( \displaystyle \frac{\partial a}{\partial z} = W^{(1)} \in \mathbb{R}^{H \times R} \)
+
+  \item \( \displaystyle \frac{\partial z}{\partial x} \in \mathbb{R}^{R \times R} \) is diagonal with entries:
+    \[
+    \left( \frac{\partial z}{\partial x} \right)_{ii} = 
+    \frac{y^{\max}_{i,\text{in}} - y^{\min}_{i,\text{in}}}{x^{\max}_{i,\text{in}} - x^{\min}_{i,\text{in}}}
+    \]
+\end{itemize}
+
+Combining all terms, the Jacobian becomes:
+
+\[
+J = D_{\text{out}} \cdot W^{(2)} \cdot D_{\tanh} \cdot W^{(1)} \cdot D_{\text{in}}
+\]
+
+where:
+\begin{align*}
+D_{\text{out}} &= \text{diag} \left( \frac{x^{\max}_{i,\text{out}} - x^{\min}_{i,\text{out}}}{y^{\max}_{i,\text{out}} - y^{\min}_{i,\text{out}}} \right) \in \mathbb{R}^{U \times U} \\
+D_{\tanh} &= \text{diag} \left( 1 - \tanh^2(a_i) \right) \in \mathbb{R}^{H \times H} \\
+D_{\text{in}} &= \text{diag} \left( \frac{y^{\max}_{i,\text{in}} - y^{\min}_{i,\text{in}}}{x^{\max}_{i,\text{in}} - x^{\min}_{i,\text{in}}} \right) \in \mathbb{R}^{R \times R}
+\end{align*}
+
+
+
+
+
+
+\end{document}
+
+
