@@ -1,0 +1,9 @@
+.DS_Store
+*.asv
+readme/.DS_Store
+readme/netEvalFp_readme.aux
+readme/netEvalFp_readme.fdb_latexmk
+readme/netEvalFp_readme.fls
+readme/netEvalFp_readme.log
+readme/netEvalFp_readme.out
+readme/netEvalFp_readme.synctex.gz
