@@ -279,16 +279,16 @@ Warning: the code will stop training after hitting the max number of epochs and 
 \item Remember that the NN will try to fit the data the best it can. But if you do not allow enough neurons it will give a bad fit to the data. Check the fit after running training and consider increasing the number of nodes if the fit is bad. To avoid overfitting, the best practice would be (I think) to compute the fit only on the testing sample (which was not used in the training) when comparing hyper-parameters such as the number of nodes. 
 
   \item The indices used for each subset are stored in \code{tr.trainInd}, \code{tr.valInd}, and \code{tr.testInd}.
-  \item To manually specify the split, use \code{'divideind'} and set the index fields in \code{net.divideParam}.
-  \item For full reproducibility across sessions, set the seed using \code{rng(seed)} at the top of your script.
+  \item To manually specify the training/validation/test split, use \code{'divideind'} and set the index fields in \code{net.divideParam}.
+  \item For full reproducibility across sessions, set the seed using \code{rng(seed)} at the top of your script, because even when using deterministic division of training data there is another piece of randomness in these methods: \code{train} initialises the weights and biases with small random numbers the first time a net is trained. 
 
 
 
 \item In many economic applications you might want to dampen the update of the approximation of a function. For example, we might re-train the net on a new simulation, and then use the net to produce a new simulation, and so on (think a Krusell Smith type application). To ensure stability, we might to not fully update the net each iteration. 
 
-You can implement dampening of NN update in several ways. Note that calling \code{train} will by default try to exactly fit the data presented to it. To dampen, we need to essentially slow down or stop the \code{train} function before it does so. Here are some options:
+You can implement dampening of the NN update in several ways. Note that calling \code{train} will by default try to exactly fit the data presented to it. To dampen, we need to essentially slow down or stop the \code{train} function before it does so. Here are some options:
 \begin{enumerate}
-\item Simplest: Dampen the data being sent to train, then let train run as usual. E.g. don't send the new value functions, but a dampened update of them. 
+\item Simplest: Dampen the data being sent to train, then let train run as usual. E.g. don't send the new $y$ data, but a dampened mix of the old and new data. 
 
 \item Reduce number of epochs (\code{net.trainParam.epochs}). Epochs is number of iterations inside the train function, so fewer iterations might stop \code{train} from fully converging. However, it is typically very quick to converge quite close to the solution. Alternatively, just setting a low number of max epochs is also helpful for speeding up your code, as it might not be necessary to get full convergence during intermediate iterations. 
 
@@ -325,7 +325,7 @@ This repository includes five MATLAB files: three functions and two example scri
   \end{itemize}
   These scripts serve as test beds for verifying the functionality of the custom code. The first script tests a function where $y$ is a scalar output, and the second a function where $y$ is a $3\times1$ vector output.
 
-  \item \code{netExtractParams.m}:  
+  \item \code{netParams = netExtractParams(net)}:  
   Extracts network parameters into a structured format for external use.
 
   \textbf{Inputs:} \code{net} — a trained feedforward neural network object.
@@ -337,7 +337,7 @@ This repository includes five MATLAB files: three functions and two example scri
     \item Some basic details about the net structure
   \end{itemize}
 
-  \item \code{netEvalF.m}:  
+  \item \code{y = netEvalF(x,netParams)}:  
   Evaluates the output of the trained neural network at a batch of input points.
 
   \textbf{Inputs:}
@@ -348,7 +348,7 @@ This repository includes five MATLAB files: three functions and two example scri
 
   \textbf{Outputs:} \code{y} — matrix of predicted outputs, of size \( U \times S \)
 
-  \item \code{netEvalFp.m}:  
+  \item \code{J = netEvalFp(x,netParams)}:  
   Evaluates the Jacobian of the network output with respect to the input, for a batch of input vectors.
 
   \textbf{Inputs:}
@@ -374,7 +374,7 @@ This repository includes five MATLAB files: three functions and two example scri
 \setcounter{equation}{0} 
 \counterwithin{figure}{section}
 
-\section{Mathematical forms and derivations}
+\section{Mathematical expressions and derivations}
 \label{app:maths}
 
 \subsection{Neural net functional form}
