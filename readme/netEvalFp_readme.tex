@@ -384,16 +384,18 @@ Let \( S_{\text{in}}(x) \) denote the elementwise affine transformation that res
 S_{\text{in}}(x)_i &= (y_{\max,i}^{\text{in}} - y_{\min,i}^{\text{in}}) \cdot \frac{x_i - x_{\min,i}^{\text{in}}}{x_{\max,i}^{\text{in}} - x_{\min,i}^{\text{in}}} + y_{\min,i}^{\text{in}} \\
 S_{\text{out}}^{-1}(z)_i &= \left( \frac{z_i - y_{\min,i}^{\text{out}}}{y_{\max,i}^{\text{out}} - y_{\min,i}^{\text{out}}} \right) \cdot (x_{\max,i}^{\text{out}} - x_{\min,i}^{\text{out}}) + x_{\min,i}^{\text{out}}
 \end{align*}
-Then the function form for a shallow neural network with $H$ nodes in the hidden layer is:
+Then the functional form for a shallow neural network with $H$ nodes in the hidden layer is:
 \[
-\hat{y} = S_{\text{out}}^{-1} \left( W^{(2)} \cdot \tanh\left( W^{(1)} \cdot S_{\text{in}}(x) + b^{(1)} \right) + b^{(2)} \right)
+\hat{y} = NN(x,\phi) \equiv S_{\text{out}}^{-1} \left( W^{(2)} \cdot \tanh\left( W^{(1)} \cdot S_{\text{in}}(x) + b^{(1)} \right) + b^{(2)} \right)
 \]
 where:
 \begin{itemize}
-  \item \( x \in \mathbb{R}^R \) is the raw input,
-  \item \( \hat{y} \in \mathbb{R}^U \) is the predicted output in the original (unscaled) space,
-  \item \( W^{(1)} \in \mathbb{R}^{H \times R} \), \( b^{(1)} \in \mathbb{R}^H \), \( W^{(2)} \in \mathbb{R}^{U \times H} \), \( b^{(2)} \in \mathbb{R}^U \),
-  \item \( \tanh(\cdot) \) is applied elementwise.
+  \item \( x \in \mathbb{R}^R \) is the raw input
+  \item \( \hat{y} \in \mathbb{R}^U \) is the predicted output in the original (unscaled) space
+  \item \( W^{(1)} \in \mathbb{R}^{H \times R} \), \( b^{(1)} \in \mathbb{R}^H \), \( W^{(2)} \in \mathbb{R}^{U \times H} \), \( b^{(2)} \in \mathbb{R}^U \)
+  \item \( \tanh(\cdot) \) is applied elementwise
+  \item $NN(x,\phi)$ defines the approximating function, where $\phi = (W^{(1)},W^{(2)},b^{(1)},b^{(1)})$ collects the parameters to be estimated
+  \item Note that the scaling transformation parameters $(y_{\max}^{\text{in}},y_{\min}^{\text{in}},x_{\max}^{\text{in}},x_{\min}^{\text{in}},y_{\max}^{\text{out}},y_{\min}^{\text{out}},x_{\max}^{\text{out}},x_{\min}^{\text{out}})$ are not typically estimated but set directly using (e.g.) the maximum and minimum values in the dataset. Therefore we leave the dependence of the function $NN(x,\phi)$ on these parameters implicit. 
 \end{itemize}
 
 
